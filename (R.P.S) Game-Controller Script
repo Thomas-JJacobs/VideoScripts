@@ -1,0 +1,82 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using System.Runtime;
+
+public class Controller : MonoBehaviour
+{
+    // Rock = 0, Paper = 1, Scissors = 2.
+    public Dictionary<string, int> Map = new Dictionary<string, int> //The map is a method of representing our options to numerical values...
+    {
+        ["Rock"] = 0,
+        ["Paper"] = 1,
+        ["Scissors"] = 2,
+    };
+    private void Start()
+    {
+        //Set the element's equal to one of each possible options: (You could do this in the inspector window; if that is what you desire).
+        Plays[Map["Rock"]] = new Option("Rock", Rock); //Make sure that your map and the indexed element's corrispond to one another.
+        Plays[Map["Paper"]] = new Option("Paper", Paper);
+        Plays[Map["Scissors"]] = new Option("Scissors", Scissors);
+    }
+    //Button functionality: (Must be public).
+    public void PickOption(string Option) 
+    {
+        Debug.Log("Your Option: " + Option);
+        if(CoolDownStatus == false) //If there is no cooldown active then we can activate the next play.
+        {
+            Plays[Map[Option]].AddPlay(); //Increment the option picked using our dictionary/map to get it's index value.
+            BotPlay(Option);
+            StartCoroutine(ActivateCoolDown(2)); //Start the cool-down timer; set the 'real-time' seconds you intend to make the player wait for.
+        }
+    }
+
+    //Variables:
+    [Header("Icon's:")]
+    public Sprite Rock;
+    public Sprite Paper, Scissors;
+    [Header("Game Setup:")]
+    public int Score, BotScore;
+    public GameObject ChosenIcon;
+    public Text BotText, ScoreText;
+    //Private: 
+    private Option[] Plays = new Option[3];
+    private bool CoolDownStatus = false;
+
+    class Option //I will use the 'Option' class to create mutliple instances relating back to the possible play's being; Rock, Paper or Scissors.
+    {
+        public string Name;
+        public Sprite Icon;
+        public int Count=0;
+
+        public Option(string N, Sprite I)
+        {
+            Name = N; Icon = I;
+        }
+        public void AddPlay() { Count++; }
+    }
+
+    private void BotPlay(string PlayerPick)//Where the main game actaully takes place:
+    {
+        int BotPick = Random.Range(0, Plays.Length); //Simply pick a random option but make sure it's within your index range! or issues will pursue.
+        BotText.text = "Bot Pick's: " + Plays[BotPick].Name;
+        ChosenIcon.GetComponent<Image>().sprite = Plays[BotPick].Icon; //Set the picture to what the bot has chosen.
+
+        if (Plays[BotPick].Name == "Scissors" && PlayerPick == "Rock" || Plays[BotPick].Name == "Paper" && PlayerPick == "Scissors"  //You could index the players pick too, but it's more clear this way... but more prone to errors due to spelling mistakes.
+            || Plays[BotPick].Name == "Rock" && PlayerPick == "Paper") { Score++; Debug.Log("You won this round!"); }//Player wins!
+
+        else if(Plays[BotPick].Name == PlayerPick) { Debug.Log("Draw, No one won this round."); }
+
+        else { Debug.Log("You lost this round :("); BotScore++; }
+
+        ScoreText.text = "Score: "+Score + ", Bot Score: " + BotScore + ", Rock Play's: " + Plays[Map["Rock"]].Count + ", Paper Play's: " + Plays[Map["Paper"]].Count + ", Scissors Play's: " + Plays[Map["Scissors"]].Count;
+    }
+
+    private IEnumerator ActivateCoolDown(int CoolDownPeriod)//We can use this 'cool-down' / timer function to stop the player spamming possible play's.
+    {
+        CoolDownStatus = true;
+        yield return new WaitForSecondsRealtime(CoolDownPeriod);
+        CoolDownStatus = false;
+    }
+}
